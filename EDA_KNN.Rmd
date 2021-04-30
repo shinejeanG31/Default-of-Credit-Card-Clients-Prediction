@@ -1,0 +1,530 @@
+---
+title: "project - IE7275"
+author: "Jayeta Biswas"
+output: html_notebook
+---
+
+```{r echo=T, eval=T}
+knitr::opts_chunk$set(echo = T, eval=T)
+```
+
+```{r}
+library("tidyverse")
+library("ggplot2")
+library("lessR")
+library(dplyr)
+library(tidyr)
+library(viridis)
+library(tidyr)
+library(reshape2)
+library(corrplot)
+library(caret)
+library(class)
+library(pROC)
+library(MASS)
+###uploaddata 
+default<- read.csv("~/Desktop/project ie7275 jayeta /default of credit card clients copy.csv")
+str(defaults)
+```
+rename columns and get rid of ID column 
+```{r}
+
+client<-default[,-c(1)]
+colnames(client)[24]<-"October.defaulter"
+colnames(client)[6]<-"PAY_1"
+summary(client)
+```
+~22.12% are defaulters. 
+no.na
+
+###group  becuase 5,6 and 0 are all  unknown 
+```{r}
+client$EDUCATION[client$EDUCATION==0]<-4
+client$EDUCATION[client$EDUCATION==5]<-4
+client$EDUCATION[client$EDUCATION==6]<-4
+client$MARRIAGE[client$MARRIAGE==0]<-3
+client$PAY_1[client$PAY_1==0]<- -1
+client$PAY_1[client$PAY_1==-2]<--1
+client$PAY_2[client$PAY_2==0]<- -1
+client$PAY_2[client$PAY_2==-2]<--1
+client$PAY_3[client$PAY_3==0]<- -1
+client$PAY_3[client$PAY_3==-2]<--1
+client$PAY_4[client$PAY_4==0]<- -1
+client$PAY_4[client$PAY_4==-2]<--1
+client$PAY_5[client$PAY_5==0]<- -1
+client$PAY_5[client$PAY_5==-2]<--1
+client$PAY_6[client$PAY_6==0]<- -1
+client$PAY_6[client$PAY_6==-2]<--1
+str(client)
+```
+### are there any corelation?
+```{r}
+c<-client[,c(1:24)]
+m<-cor(c)
+corrplot(m)
+
+```
+
+###looking at the coorelation plot we are going to focus on  PAy_i as they have good relationhsip with defaults.
+
+```{r}
+###Pay_i   have good corrlation with  defaulters. hence we are going to explore that. 
+###we start with Pay_1 as it has the strongest correlation with dedaulters 
+client$PAY_1<-as.factor(client$PAY_1)
+client$PAY_2<-as.factor(client$PAY_2)
+client$PAY_3<-as.factor(client$PAY_3)
+client$PAY_4<-as.factor(client$PAY_4)
+client$PAY_5<-as.factor(client$PAY_5)
+client$PAY_6<-as.factor(client$PAY_6)
+client$October.defaulter<-as.factor(client$October.defaulter)
+client
+client%>%
+  select(.,PAY_1,PAY_2,PAY_3,PAY_4,PAY_5,PAY_6)%>%
+  aggregate(.,by=list(client$PAY_1),
+            FUN=length)
+
+```
+
+
+```{r}
+library(stringr)
+library(RCurl)
+library(knitr)
+library(plyr)
+pay1 <- client %>%
+  select(.,PAY_1,PAY_2,October.defaulter)
+pay1
+
+ddply(pay1,.(PAY_1), 
+    function(x) with(x,
+      data.frame(100*round(table(October.defaulter)/length(October.defaulter),2))))
+library(janitor)
+pay1 %>%
+  tabyl(October.defaulter, PAY_1) %>%
+  adorn_totals(c("row", "col")) %>%
+  adorn_percentages("row") %>% 
+  adorn_pct_formatting(rounding = "half up", digits = 0) %>%
+  adorn_ns() %>%
+  adorn_title("combined") %>%
+  knitr::kable()
+pay1 %>%
+  tabyl(October.defaulter, PAY_2) %>%
+  adorn_totals(c("row", "col")) %>%
+  adorn_percentages("row") %>% 
+  adorn_pct_formatting(rounding = "half up", digits = 0) %>%
+  adorn_ns() %>%
+  adorn_title("combined") %>%
+  knitr::kable()
+```
+```{r}
+
+ggplot(client,aes(x=PAY_1,group=October.defaulter))+
+   geom_bar(aes(y = ..prop.., fill = factor(..x..)), stat="count") +
+    geom_text(aes( label = scales::percent(..prop..),
+                   y= ..prop.. ), stat= "count", vjust = -.5) +
+    labs(y = "Percent",fill= "PAy_1",title = " October defaulters and thier Status in September") +
+    facet_grid(~October.defaulter) +
+    scale_y_continuous(labels = scales::percent)+
+   labs(caption= "1=Defaulter, 0=Not Defaulter")
+
+```
+```{r}
+
+ggplot(client,aes(x=PAY_2,group=October.defaulter))+
+   geom_bar(aes(y = ..prop.., fill = factor(..x..)), stat="count") +
+    geom_text(aes( label = scales::percent(..prop..),
+                   y= ..prop.. ), stat= "count", vjust = -.5) +
+    labs(y = "Percent",fill= "PAy_1",title = " October defaulters and thier Status in August") +
+    facet_grid(~October.defaulter) +
+    scale_y_continuous(labels = scales::percent)+
+   labs(caption= "1=Defaulter, 0=Not Defaulter")
+
+```
+```{r}
+
+ggplot(client,aes(x=PAY_3,group=October.defaulter))+
+   geom_bar(aes(y = ..prop.., fill = factor(..x..)), stat="count") +
+    geom_text(aes( label = scales::percent(..prop..),
+                   y= ..prop.. ), stat= "count", vjust = -.5) +
+    labs(y = "Percent",fill= "PAy_1",title = " October defaulters and thier Status in July") +
+    facet_grid(~October.defaulter) +
+    scale_y_continuous(labels = scales::percent)+
+   labs(caption= "1=Defaulter, 0=Not Defaulter")
+
+```
+```{r}
+
+ggplot(client,aes(x=PAY_4,group=October.defaulter))+
+   geom_bar(aes(y = ..prop.., fill = factor(..x..)), stat="count") +
+    geom_text(aes( label = scales::percent(..prop..),
+                   y= ..prop.. ), stat= "count", vjust = -.5) +
+    labs(y = "Percent",fill= "PAy_1",title = " October defaulters and thier Status in June") +
+    facet_grid(~October.defaulter) +
+    scale_y_continuous(labels = scales::percent)+
+   labs(caption= "1=Defaulter, 0=Not Defaulter")
+
+```
+```{r}
+
+ggplot(client,aes(x=PAY_5,group=October.defaulter))+
+   geom_bar(aes(y = ..prop.., fill = factor(..x..)), stat="count") +
+    geom_text(aes( label = scales::percent(..prop..),
+                   y= ..prop.. ), stat= "count", vjust = -.5) +
+    labs(y = "Percent",fill= "PAy_1",title = " October defaulters and thier Status in May") +
+    facet_grid(~October.defaulter) +
+    scale_y_continuous(labels = scales::percent)+
+   labs(caption= "1=Defaulter, 0=Not Defaulter")
+
+```
+```{r}
+
+ggplot(client,aes(x=PAY_6,group=October.defaulter))+
+   geom_bar(aes(y = ..prop.., fill = factor(..x..)), stat="count") +
+    geom_text(aes( label = scales::percent(..prop..),
+                   y= ..prop.. ), stat= "count", vjust = -.5) +
+    labs(y = "Percent",fill= "PAy_1",title = " October defaulters and thier Status in April") +
+    facet_grid(~October.defaulter) +
+    scale_y_continuous(labels = scales::percent)+
+   labs(caption= "1=Defaulter, 0=Not Defaulter")
+
+```
+
+
+```{r}
+pay_i<-client%>%select(.,PAY_1,PAY_2,PAY_3,PAY_4)
+sapply(X=pay_i , FUN=table)
+pay_ii<-client%>%select(.,PAY_5,PAY_6)
+sapply(X=pay_ii , FUN=table)
+
+```
+
+
+###looking at limit_bal
+```{r}
+ggplot(client,aes(x=LIMIT_BAL,group=October.defaulter,fill=October.defaulter))+
+  geom_density(adjust=1.5,alpha=.2,)+
+  labs(title="Density plot of Limit Balance with respect to Defaulters")+
+   labs(caption= "1=Defaulter, 0=Not Defaulter")
+```
+Age
+```{r}
+
+ggplot(data=client, aes(x=AGE, group=October.defaulter, fill=October.defaulter)) +
+    geom_density(adjust=1.5, alpha=.4)+
+  labs(title="Density plot of Age with respect to Defaulters")+
+   labs(caption= "1=Defaulter, 0=Not Defaulter")
+```
+
+
+
+
+```{r}
+client$SEX<-as.factor(client$SEX)
+ggplot(client,aes(x=October.defaulter,group=SEX))+
+   geom_bar(aes(y = ..prop.., fill = factor(..x..)), stat="count") +
+    geom_text(aes( label = scales::percent(..prop..),
+                   y= ..prop.. ), stat= "count", vjust = -.5) +
+    labs(y = "Percent", fill="SEX") +
+    facet_grid(~SEX) +
+    scale_y_continuous(labels = scales::percent)+
+   labs(caption= "sex=1=Male, sex=2=Female,1=Defaulter, 0=Not Defaulter")
+
+```
+
+```{r}
+ggplot(client,aes(x=SEX,fill=October.defaulter))+
+    geom_bar(position="fill")+
+    geom_text(aes(label=scales::percent(..count../sum(..count..))),
+              stat='count',position=position_fill(vjust=0.5))+
+  labs(caption= "sex=1=Male, sex=2=Female,1=Defaulter, 0=Not Defaulter")
+
+```
+
+
+```{r}
+client$SEX<-as.factor(client$SEX)
+ggplot(client,aes(x=EDUCATION,group=October.defaulter))+
+   geom_bar(aes(y = ..prop.., fill = factor(..x..)), stat="count") +
+    geom_text(aes( label = scales::percent(..prop..),
+                   y= ..prop.. ), stat= "count", vjust = -.5) +
+    labs(y = "Percent", fill="EDUCATION") +
+    facet_grid(~October.defaulter) +
+    scale_y_continuous(labels = scales::percent)+
+   labs(caption= "1=Defaulter, 0=Not Defaulter")
+```
+
+
+```{r}
+ggplot(client,aes(x=EDUCATION,fill=October.defaulter))+
+    geom_bar(position="fill")+
+    geom_text(aes(label=scales::percent(..count../sum(..count..))),
+              stat='count',position=position_fill(vjust=0.5))+
+  labs(caption= "1=Defaulter, 0=Not Defaulter")
+
+```
+
+### are there any outliers ? with respect to  defaulters. 
+
+```{r}
+client$October.defaulter<-as.factor(client$October.defaulter)
+client$SEX<-as.factor(client$SEX)
+client$EDUCATION<-as.factor(client$EDUCATION)
+client$PAY_1<-as.factor(client$PAY_1)
+client$PAY_2<-as.factor(client$PAY_2)
+client$PAY_3<-as.factor(client$PAY_3)
+client$PAY_4<-as.factor(client$PAY_4)
+client$PAY_5<-as.factor(client$PAY_5)
+client$PAY_6<-as.factor(client$PAY_6)
+
+client  %>%
+  ggplot(aes(x=client$October.defaulter,y=client$LIMIT_BAL,  fill=factor(client$SEX))) +
+  geom_boxplot() 
+
+client  %>%
+  ggplot(aes(x=client$October.defaulter,y=client$LIMIT_BAL,  fill=factor(client$EDUCATION))) +
+  geom_boxplot() 
+
+client  %>%
+  ggplot(aes(x=client$October.defaulter,y=client$LIMIT_BAL,  fill=factor(client$MARRIAGE))) +
+  geom_boxplot() 
+
+client  %>%
+  ggplot(aes(x=client$October.defaulter,y=client$LIMIT_BAL,  fill=factor(client$PAY_1))) +
+  geom_boxplot() 
+
+client  %>%
+  ggplot(aes(x=client$October.defaulter,y=client$LIMIT_BAL,  fill=factor(client$PAY_2))) +
+  geom_boxplot() 
+
+client  %>%
+  ggplot(aes(x=client$October.defaulter,y=client$LIMIT_BAL,  fill=factor(client$PAY_3))) +
+  geom_boxplot() 
+client  %>%
+  ggplot(aes(x=client$October.defaulter,y=client$LIMIT_BAL,  fill=factor(client$PAY_4))) +
+  geom_boxplot() 
+client  %>%
+  ggplot(aes(x=client$October.defaulter,y=client$LIMIT_BAL,  fill=factor(client$PAY_5))) +
+  geom_boxplot() 
+
+client  %>%
+  ggplot(aes(x=client$October.defaulter,y=client$LIMIT_BAL,  fill=factor(client$PAY_6))) +
+  geom_boxplot() 
+```
+
+```{r}
+client  %>%
+  ggplot(aes(x=client$October.defaulter,y=client$BILL_AMT1,  fill=factor(client$SEX))) +
+  geom_boxplot() 
+
+client  %>%
+  ggplot(aes(x=client$October.defaulter,y=client$BILL_AMT1,  fill=factor(client$EDUCATION))) +
+  geom_boxplot() 
+
+client  %>%
+  ggplot(aes(x=client$October.defaulter,y=client$BILL_AMT1,  fill=factor(client$MARRIAGE))) +
+  geom_boxplot() 
+
+client  %>%
+  ggplot(aes(x=client$October.defaulter,y=client$BILL_AMT1,  fill=factor(client$PAY_1))) +
+  geom_boxplot() 
+
+client  %>%
+  ggplot(aes(x=client$October.defaulter,y=client$BILL_AMT2,  fill=factor(client$PAY_1))) +
+  geom_boxplot() 
+client  %>%
+  ggplot(aes(x=client$October.defaulter,y=client$BILL_AMT3,  fill=factor(client$PAY_1))) +
+  geom_boxplot() 
+client  %>%
+  ggplot(aes(x=client$October.defaulter,y=client$BILL_AMT4,  fill=factor(client$PAY_1))) +
+  geom_boxplot() 
+client  %>%
+  ggplot(aes(x=client$October.defaulter,y=client$BILL_AMT5,  fill=factor(client$PAY_1))) +
+  geom_boxplot() 
+client  %>%
+  ggplot(aes(x=client$October.defaulter,y=client$BILL_AMT6,  fill=factor(client$PAY_1))) +
+ facet_wrap(~year) +
+   geom_boxplot() 
+ 
+```
+
+```{r}
+client  %>%
+  ggplot(aes(x=client$October.defaulter,y=client$PAY_AMT1,  fill=factor(client$SEX))) +
+  geom_boxplot() 
+
+client  %>%
+  ggplot(aes(x=client$October.defaulter,y=client$BILL_AMT1,  fill=factor(client$EDUCATION))) +
+  geom_boxplot() 
+
+client  %>%
+  ggplot(aes(x=client$October.defaulter,y=client$PAY_AMT1,  fill=factor(client$MARRIAGE))) +
+  geom_boxplot() 
+
+client  %>%
+  ggplot(aes(x=client$October.defaulter,y=client$PAY_AMT1,  fill=factor(client$PAY_1))) +
+  geom_boxplot() 
+
+client  %>%
+  ggplot(aes(x=client$October.defaulter,y=client$PAY_AMT2,  fill=factor(client$PAY_2))) +
+  geom_boxplot() 
+
+client  %>%
+  ggplot(aes(x=client$October.defaulter,y=client$PAY_AMT3,  fill=factor(client$PAY_3))) +
+  geom_boxplot() 
+client  %>%
+  ggplot(aes(x=client$October.defaulter,y=client$PAY_AMT4,  fill=factor(client$PAY_4))) +
+  geom_boxplot() 
+client  %>%
+  ggplot(aes(x=client$October.defaulter,y=client$PAY_AMT5,  fill=factor(client$PAY_5))) +
+  geom_boxplot() 
+
+client  %>%
+  ggplot(aes(x=client$October.defaulter,y=client$PAY_AMT6,  fill=factor(client$PAY_6))) +
+  geom_boxplot() 
+
+```
+
+
+
+
+###Pay_1 has a strong relationship with defaulters... expand
+```{r}
+client$PAY_1<-as.factor(client$PAY_1)
+client %>%
+  ggplot(aes(x=PAY_1,y=LIMIT_BAL,fill=factor(October.defaulter))) +
+  geom_boxplot() 
+mean(client$PAY_1)
+```
+ 
+###knn
+```{r}
+set.seed(1)
+set.seed(123) 
+train.index <- sample(rownames(client), 0.60*dim(client)[1])
+set.seed(1)
+test.index <- setdiff(row.names(client), train.index) 
+
+train.df <- client[train.index, ]
+test.df <- client[test.index, ]
+
+norm.values <- preProcess(train.df[, -c(24,2,3,4,6,7,8,9,10,11)], method=c("center", "scale"))
+train.df[, -c(24,2,3,4,6,7,8,9,10,11)] <- predict(norm.values, train.df[, -c(24,2,3,4,6,7,8,9,10,11)])
+test.df[,-c(24,2,3,4,6,7,8,9,10,11)] <- predict(norm.values, test.df[,-c(24,2,3,4,6,7,8,9,10,11)])
+
+testknn <- knn(train = train.df[,-c(24)],test = test.df[,-c(24)], cl = train.df[,c(24)], k=5, prob=TRUE)
+
+confusionMatrix(testknn, test.df[,c(24)])
+```
+
+###What is a choice of k that balances between overfitting and ignoring the predictor
+best k if  tested on testdf 
+```{r}
+### works tooo slow 
+accuracy.df <- data.frame(k = seq(1, 50, 1), accuracy = rep(0,50 ))
+
+for(i in 1:50) {
+  knn.2 <- knn(train = train.df[,-24],test = test.df[,c(-24)], cl = train.df[,24], k=i, prob=TRUE)
+  accuracy.df[i, 2] <- confusionMatrix(knn.2, test.df[,c(24)])$overall[1]
+}
+accuracy.df
+
+```
+k=35,  accuracy = 81.7
+ 
+###now we use k=35.
+```{r}
+testknn_k.34<- knn(train = train.df[,-c(24)],test = test.df[,-c(24)], cl = train.df[,c(24)], k=35, prob=TRUE)
+
+confusionMatrix(testknn_k.34, test.df[,c(24)])
+
+
+```
+
+### we can see that, if we  use the selected vaiables we get a better acuary. 
+```{r}
+plot(accuracy.df, type="b", xlab="K- Value",ylab="Accuracy level")
+```
+
+removing pay_amt 
+```{r}
+set.seed(1)
+set.seed(123)
+sel.var<-client[,-c(12:17)]
+str(sel.var)
+train.index <- sample(rownames(sel.var), 0.60*dim(sel.var)[1])
+set.seed(1)
+test.index <- setdiff(row.names(sel.var), train.index) 
+
+train.df <- sel.var[train.index, ]
+test.df <- sel.var[test.index, ]
+
+norm.values <- preProcess(train.df[, -c(2,3,4,6,7,8,9,10,11,18)], method=c("center", "scale"))
+train.df[, -c(2,3,4,6,7,8,9,10,11,18)] <- predict(norm.values, train.df[, -c(2,3,4,6,7,8,9,10,11,18)])
+test.df[,-c(2,3,4,6,7,8,9,10,11,18)] <- predict(norm.values, test.df[,-c(2,3,4,6,7,8,9,10,11,18)])
+
+testknn <- knn(train = train.df[,-c(18)],test = test.df[,-c(18)], cl = train.df[,c(18)], k=5, prob=TRUE)
+trainknn <- knn(train = train.df[,-c(18)],test = train.df[,-c(18)], cl = train.df[,c(18)], k=5, prob=TRUE)
+confusionMatrix(testknn, test.df[,c(18)])
+
+```
+best k if  tested on testdf  in selevted var 
+```{r}
+### works tooo slow 
+accuracy.df <- data.frame(k = seq(1, 50, 1), accuracy = rep(0,50 ))
+
+for(i in 1:50) {
+  knn.2 <- knn(train = train.df[,-18],test = test.df[,c(-18)], cl = train.df[,18], k=i, prob=TRUE)
+  accuracy.df[i, 2] <- confusionMatrix(knn.2, test.df[,c(18)])$overall[1]
+}
+accuracy.df
+
+```
+
+
+
+```{r}
+plot(accuracy.df, type="b", xlab="K- Value",ylab="Accuracy level")
+```
+k=23 accuracy 81.84%
+
+```{r}
+testknn <- knn(train = train.df[,-c(18)],test = test.df[,-c(18)], cl = train.df[,c(18)], k=23, prob=TRUE)
+trainknn <- knn(train = train.df[,-c(18)],test = train.df[,-c(18)], cl = train.df[,c(18)], k=23, prob=TRUE)
+confusionMatrix(testknn, test.df[,c(18)])
+```
+
+
+```{r}
+##roc 
+testknn.attributes <- attributes(testknn)
+testknn.attributes$prob
+proc<-roc(test.df[,c(18)],testknn.attributes$prob)
+
+plot(proc, print.auc=TRUE, auc.polygon=TRUE,legacy.axes=TRUE, grid=c(0.1, 0.2), grid.col=c("green", "red"), max.auc.polygon=TRUE,auc.polygon.col="skyblue", print.thres=TRUE)
+
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
