@@ -7,7 +7,7 @@ Data sources can be download from here [UCI](https://archive.ics.uci.edu/ml/data
 ** **
 
 **Datasets:** 
-- The dataset has 3000 observations with 25 variables in which there are 15 numerical variables and 10 categorical variables. The dataset contains a binary variable, default.payment.next.month (Yes = 1, No = 0) as the response variable.
+- The dataset has 30000 observations with 25 variables in which there are 15 numerical variables and 10 categorical variables. The dataset contains a binary variable, default.payment.next.month (Yes = 1, No = 0) as the response variable.
 
 ** **
 
