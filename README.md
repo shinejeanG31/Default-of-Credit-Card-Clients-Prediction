@@ -13,7 +13,7 @@ Data sources can be download from here [UCI](https://archive.ics.uci.edu/ml/data
 
 **Goal:** 
 - This project aims to predict the potential defaulter at the case of customers default payments from the given variables through classifier model buiding.
-- Besides, it is need to identify the factors contributing to defaulting activity, which will provide bank managers with risk control strategies of reducing potential defaulters, by having insight into variable importance in models. 
+- Besides, it is need to identify the factors contributing to defaulting activity, which will provide bank managers with risk control strategies of reducing potential defaulters, by having insight into variable with importance in models. 
 
 ** **
 
