@@ -1,7 +1,7 @@
 # Default-of-Credit-Card-Clients-Prediction
 **Description:** 
 30000 customer data with 24 variables and a binary variable of default payment are available. 
-Three models(Logistic Regression, Neural Network and Random Forests) has been built with model optimization to forecast whether the customer will become a defaulter, achieving the highest Accuracy of 0.82 and AUC of 0.763 by the Logistic Regression Model.
+Four models(Logistic Regression, Neural Network, Random Forests and Xgboost) has been built with model optimization to forecast whether the customer will become a defaulter, achieving the highest Accuracy of 0.82 and AUC of 0.763 by the Logistic Regression Model.
 Data sources can be download from here [UCI](https://archive.ics.uci.edu/ml/datasets/default+of+credit+card+clients#)
 
 ** **
